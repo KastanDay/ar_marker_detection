@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="fantastic_marker_detection" type="fantastic_marker_detection" name="fantastic_marker_detection" >
+
+    </node>
+</launch>
+

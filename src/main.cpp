@@ -12,6 +12,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/aruco.hpp>
 #include <sensor_msgs/Image.h>
+#include <std_msgs/String.h>
 #include <cv_bridge/cv_bridge.h>
 
 
@@ -34,6 +35,8 @@ private:
     bool             _estimatePose;
     float            _markerLength;
     int              _markDim;
+    std::vector< int > _ids; // marker ids
+    std::vector < cv::Vec3d > _rvecs, _tvecs;
     cv::Ptr<cv::aruco::DetectorParameters>    _detectorParams;
     cv::Mat _camMatrix, _distCoeffs;
     cv::Ptr<cv::aruco::Dictionary> _dictionary;
@@ -41,8 +44,8 @@ private:
 
 ImageClass::ImageClass()
 {
+    std_msgs::String outputMsg;
 
-    
 }
 
 ImageClass::~ImageClass()
@@ -115,6 +118,12 @@ static bool readDetectorParameters(std::string filename, cv::Ptr<cv::aruco::Dete
     return true;
 }
 
+
+/* Goal: Fetch parameters from OpenCV parser (command line inputs) 
+ *       Initialize the dictionary of AR markers to be read
+ * Params: argc and argv for cmd line parameters, and OpenCV Keys from main.
+ * Returns: void
+ */
 void ImageClass::initAruco( int argc, char** argv, const char* keys ) {
 
     cv::CommandLineParser parser(argc, argv, keys);
@@ -149,22 +158,38 @@ void ImageClass::initAruco( int argc, char** argv, const char* keys ) {
 
 }
 
-// DETECT MARKERS and DISPLAY MARKERS
+/* DETECT MARKERS and DISPLAY MARKERS
+ * Params: none
+ * Returns: void
+ */
 void ImageClass::arucoDetect( ) 
 {
     // create std::vectors of data holding marker info
-    std::vector< int > ids; // marker ids
     std::vector< std::vector < cv::Point2f > > corners, rejected; // marker corners and rejected candidates
-    std::vector< cv::Vec3d > rvecs, tvecs;
 
-    // detect markers and estimate pose
-    cv::aruco::detectMarkers(_classImage, _dictionary, corners, ids, _detectorParams, rejected);
+    // detect markers
+    cv::aruco::detectMarkers(_classImage, _dictionary, corners, _ids, _detectorParams, rejected);
 
-    std::cout << "Detected " << ids.size()  << " markers" << std::endl;
+    // estimate pose
+    if (_estimatePose && _ids.size() > 0) {
+        cv::aruco::estimatePoseSingleMarkers(corners, _markerLength, _camMatrix, _distCoeffs, 
+                                                _rvecs, _tvecs);
+    }
+
+    // TODO: The important info is in _ids and _rvecs and _tvecs
+
+    // TODO: populate publishing fields?
 
     // draw results
-    if(ids.size() > 0) {
-        cv::aruco::drawDetectedMarkers(_classImage, corners, ids);
+    if (_ids.size() > 0) {
+        cv::aruco::drawDetectedMarkers(_classImage, corners, _ids);
+    }  
+    // draw pose axis
+    if (_estimatePose && _ids.size() > 0 ) {
+        for (int i = 0; i < _ids.size(); i++) {   
+            cv::aruco::drawAxis( _classImage, _camMatrix, _distCoeffs, _rvecs[i], _tvecs[i],
+                                    _markerLength);
+        }
     }
 
     cv::imshow("ourGreatWindow", _classImage);
@@ -198,7 +223,7 @@ void ImageClass::chatterCallback( const sensor_msgs::ImageConstPtr& msg)
     // ROS_INFO("width = %d, height = %d, step = %d", msg->width, msg->height, msg->step);
     // ROS_INFO("encoding = %s", msg->encoding.c_str());
     
-    _classImage= rgbToMat( msg );
+    _classImage = rgbToMat( msg );
 
     arucoDetect( );
     
@@ -217,7 +242,7 @@ int main(int argc, char **argv) {
     image_class.initAruco( argc, argv, keys );
 
     // subscribe to publishing camera
-    image_class._subscriber_key = node.subscribe("/usb_cam/image_raw", 1, &ImageClass::chatterCallback, &image_class);
+    image_class._subscriber_key = node.subscribe("/usb_cam/image_raw", 1, &ImageClass::chatterCallback, &image_class); //  /gazebo/camera0/image_raw
 
     ros::spin();
 
