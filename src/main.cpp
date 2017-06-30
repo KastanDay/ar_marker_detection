@@ -1,19 +1,25 @@
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <image_transport/camera_publisher.h>
-#include <camera_info_manager/camera_info_manager.h>
-#include <std_srvs/Empty.h>
-//#include <usb_cam/usb_cam.h>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <opencv2/core/persistence.hpp> // Need this for cv::FileStorage?
+// #include <image_transport/image_transport.h>
+// #include <image_transport/camera_publisher.h>
+// #include <camera_info_manager/camera_info_manager.h>
+// #include <std_srvs/Empty.h>
+// #include <string>
+// #include <iostream>
+// #include <sstream>
+// #include <opencv2/core/persistence.hpp> // Need this for cv::FileStorage?
+
 
 #include <opencv2/highgui.hpp>
 #include <opencv2/aruco.hpp>
-#include <sensor_msgs/Image.h>
+// #include <sensor_msgs/Image.h>
 #include <std_msgs/String.h>
 #include <cv_bridge/cv_bridge.h>
+
+#include <geometry_msgs/PoseArray.h>
+#include <aruco_msgs/MarkerArray.h>
+#include <aruco_msgs/Marker.h>
+// #include <aruco_msgs/kastanMarker.h>
+
 
 
 class ImageClass
@@ -40,12 +46,39 @@ private:
     cv::Ptr<cv::aruco::DetectorParameters>    _detectorParams;
     cv::Mat _camMatrix, _distCoeffs;
     cv::Ptr<cv::aruco::Dictionary> _dictionary;
+    
+    aruco_msgs::MarkerArray::Ptr _marker_msg;
+    // TODO remove this
+    // aruco_msgs::kastanMarker::Ptr kastan_message;
+    // cv::aruco::MarkerDetector _mDetector;  This is from aruco_ros
 };
 
 ImageClass::ImageClass()
 {
     std_msgs::String outputMsg;
+    geometry_msgs::PoseArray::Ptr   poseMessage;
+    poseMessage = geometry_msgs::PoseArray::Ptr(new geometry_msgs::PoseArray());
 
+    _marker_msg = aruco_msgs::MarkerArray::Ptr(new aruco_msgs::MarkerArray());
+
+    // TODO remove
+    // kastan_message = aruco_msgs::kastanMarker::Ptr(new geometry_msgs::PoseArray());
+    // kastan_message->header.frame_id = "TESTING THIS SHIITT";
+    // std::cout << "HEADER FRAME " << kastan_message->header.frame_id << std::endl;
+
+    _marker_msg->header.frame_id = "world_frame";
+    _marker_msg->header.seq = 0;
+
+    _marker_msg->markers.resize(10);
+    //_marker_msg->markers.at(0).MARKERID = 10;
+    //
+
+    
+    // TODO 
+    //      this is the way to do it (markers[x].pose.pose.position.x
+    //      orientation is orientation and is x y z w 
+    //      orientatin is in Quarternion form.
+    _marker_msg->markers[2].pose.pose.position.x = 1;
 }
 
 ImageClass::~ImageClass()
@@ -155,7 +188,6 @@ void ImageClass::initAruco( int argc, char** argv, const char* keys ) {
     }
     // create custom dictionary
     _dictionary = cv::aruco::generateCustomDictionary(64, 4); // 64 markers in dict, all 4x4
-
 }
 
 /* DETECT MARKERS and DISPLAY MARKERS
@@ -175,10 +207,41 @@ void ImageClass::arucoDetect( )
         cv::aruco::estimatePoseSingleMarkers(corners, _markerLength, _camMatrix, _distCoeffs, 
                                                 _rvecs, _tvecs);
     }
+    
 
-    // TODO: The important info is in _ids and _rvecs and _tvecs
 
-    // TODO: populate publishing fields?
+
+    // -----------------------------------------------------
+    // ------------------- POPULATE MSGS -------------------
+    // -----------------------------------------------------
+    
+    _marker_msg->markers.clear();
+
+
+    try { 
+    std::cout << "VECTORS " << _tvecs[0].position.x << std::endl;
+    } catch (int e)
+    {
+        std::cout << "PRINTING VECTORS FAILED!!" << std::endl;
+    }
+    // OHHH just do:
+    
+    // TODO
+    // _marker_msg->markers.header = // confidence = 20;
+
+    // _marker_msg->markers.pose.pose.position.x = _tvecs[0].x;
+
+    // _marker_msg->markers.pose.translation.x = _tvecs[0].x;
+    // _marker_msg->markers.pose.rotation.x = _rvecs[0].x;  // need to figure out how these are indexed...
+                                    // is it by detected markers or is marker 42 always in position 42?
+    
+
+
+
+    // -----------------------------------------------------
+    // ------------------- DRAW RESULTS --------------------
+    // -----------------------------------------------------
+
 
     // draw results
     if (_ids.size() > 0) {

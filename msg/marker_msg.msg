@@ -1,3 +1,5 @@
+# Written by Kastan Day
+
 Header header
 int32         ids
 string        rvecs  # rotation vector for markers' pose
