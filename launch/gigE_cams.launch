@@ -1,0 +1,13 @@
+<launch> 
+    <node pkg="fantastic_marker_detection" type="vimba" name="gigE_cams_capture" output="screen"> 
+
+        <!-- give the name of the ROS_topic to which the camera feeds will be published.-->
+        <!-- Each camera feed will be published to its own ROS_Topic, starting from 0 and increasing (gigE_cam_0, gigE_cam_1, etc.) -->
+        <param name="gigE_cam_pub_topic_template"  value="gigE_cam_0"  />
+        <param name="path_to_cam_settings_xml"  value="/home/kastan/catkin_ws/src/fantastic_marker_detection/bin/DARPA_cam_settings.xml"  />
+        <param name="display_images_on_screen"  value="false"  /> <!-- noticible performance hit. Useful for debugging, not so much for execution -->
+
+    </node>
+
+</launch>
+

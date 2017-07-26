@@ -1,6 +1,44 @@
-<launch>
-    <node pkg="fantastic_marker_detection" type="fantastic_marker_detection" name="fantastic_marker_detection" >
+<launch> 
+    <node pkg="fantastic_marker_detection" type="fantastic_marker_detection" name="fantastic_marker_detection" output="screen"> 
+        
+        <param name="source_frame"    value="cam1"    /> 
+        <param name="target_frame"    value="world"   /> 
+            <!-- Next is the location of the camera calibration file required for pose estimation -->
+        <param name="camera_params" value="/home/kastan/catkin_ws/src/fantastic_marker_detection/bin/camCalib.txt" /> 
+        <param name="detector_params" value="" />  <!-- black uses default params, which are good -->
+        <param name="_markerLength"   value="0.05"    />   <!-- length of marker side in meters -->
+        <param name="_markDim"        value="4"       />   <!-- number of pixel-like boxes that comprise the markers. Just one side length -->
+        <param name="marker_pub_rostopic" value="markers_node_0"         />
+        <param name="video_input_sub_rostopic" value="gigE_cam_0" />
+        <param name="draw_markers_on_screen" value="true" />
 
     </node>
+
+    <node pkg="fantastic_marker_detection" type="fantastic_marker_detection" name="fantastic_marker_detection_2" output="screen">
+        <param name="source_frame"    value="cam2"    />
+        <param name="target_frame"    value="world"   />
+        <param name="camera_params" value="/home/kastan/catkin_ws/src/fantastic_marker_detection/bin/camCalib.txt" />
+            <!-- This is the location of the camera calibration file required for pose estimation -->
+        <param name="detector_params" value="" />  <!-- black uses default params, which are good -->
+        <param name="_markerLength"   value="0.05"    />   <!-- length of marker side in meters -->
+        <param name="_markDim"        value="4"       />   <!-- number of pixel-like boxes that comprise the markers. Just one side length -->
+        <param name="marker_pub_rostopic" value="markers_node_1"          />
+        <param name="video_input_sub_rostopic" value="gigE_cam_1" />
+        <param name="draw_markers_on_screen" value="true" />
+
+    </node>
+
+    <node pkg="fantastic_marker_detection" type="fmd_consolidation" name="fmd_consolidation_main" output="screen">
+        <param name="num_cameras"  value="2"  />
+        <param name="num_markers"  value="64" />
+        <!-- give topic of first, others will be assumed to increase from 0 -->
+        <param name="markers_sub_topic_template"    value="markers_node_0" />  
+
+    </node>
+
+    <!-- Static publisher of camera parameters in tf2 -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 1 world cam1" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="link2_broadcaster" args="1 2 3 0 0 0 1 world cam2" />
+
 </launch>
 

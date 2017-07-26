@@ -1,0 +1,34 @@
+Hi all:
+I spent a lot of time trying to find the best way to get Vimba and OpenCV to play together - here's what I have.
+
+Crux of the issue:
+
+<code>
+
+    FramePtr pFrame;
+    VmbUchar_t *pImage = Null;
+    VmbUint32_t timeout = 500;
+    VmbUint43_t nWidth = 0;
+    VmbUint43_t nHeight = 0;
+
+    if (VmbErrorSuccess == cameras[ 0 ]->Camera::AcquireSingleImage( pFrame, timeout ) ) {
+    
+         if (VmbErrorSuccess != pFrame->getWidth( nWidth );
+           std::cout << "FAILED to aquire width of frame!" << std::endl;
+    
+         if (VmbErrorSuccess != pFrame->getWidth( nHeight );
+           std::cout << "FAILED to aquire height of frame!" << std::endl;
+ 
+         if (VmbErrorSuccess != pFrame->getImage( pImage );
+            std::cout << "FAILED to acquire image data of frame!" << std::endl;
+
+         cv::Mat cvMat = cv::Mat(nHeight, nWidth, CV_8UC1, pImage );
+         cv::cvtColor(cvMat, cvMat, CV_BayerBG2RGB); 
+         // My camera is set up to publish BayerBG. It's an efficient codec.
+     
+         cv::imshow("Our Great Window", cvMat);
+         cv::waitKey(1);
+    }
+
+
+</code>
